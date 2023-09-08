@@ -5,6 +5,7 @@
  *      结构 -> vue代码 -> html 
  * 
  */
+/* global Vue */
 import { parseComponent } from 'vue-template-compiler/browser';
 import { merge, insertPresetAttribute, getSplitTag, replaceRowID, updateLinkTree, findCodeElemNode, findRawVueInfo } from "@/utils/forCode";
 import { getRawComponentContent, getRawComponentKey, isObject } from '@/utils/common';
@@ -32,9 +33,9 @@ export class MainPanelProvider {
     }
 
     /**
-     * 对内渲染
-     * @param {*} rawDataStructure 
-     */
+      * 对内渲染
+      * @param {*} rawDataStructure 
+      */
     _render(rawDataStructure) {
         this._rawDataStructure = rawDataStructure;
         // 对外只提供副本，防止外面污染内部
@@ -49,7 +50,7 @@ export class MainPanelProvider {
         let code = this.codeGenerator.outputVueCodeWithJsonObj(rawDataStructure);
 
         // 将xxx: () => {} 转换为xxx(){}
-        code = code.replace(/:\s*\(([\w\s]*)\)\s*=>/g,"\($1\)");
+        code = code.replace(/:\s*\(([\w\s]*)\)\s*=>/g, "($1)");
 
         // 生成展示代码
         let codeForShow = code.replace(/\s{1}lc_id=".+?"/g, '');
@@ -65,25 +66,24 @@ export class MainPanelProvider {
         let newScript = script.content.replace(/\s*export default\s*/, "")
 
         const componentOptions = (new Function(`return ${newScript}`))();
-
-        componentOptions.template = template.content;
         
-        if (this.editMode) {
-            // 渲染当前代码
-            // const readyForMoutedElement = this.createMountedElement();
-            // createBaseAppAsync(componentOptions).then(app => {
-            //     app.mount(readyForMoutedElement)
-            //     // 开启编辑模式
-            //     this.enableEditMode();
-            // });
-            
-            // 拍平数据结构
-            this.flatDataStructure(rawDataStructure);
-    
-        } else {
-            // 渲染当前代码
-            // createBaseAppAsync(componentOptions).then(app => app.mount(this.mountedEle));
-        }
+        const res =Vue.compile(template.content);
+
+        componentOptions.render = function () {
+            const rootVNode = res.render.apply(this, arguments);
+            return rootVNode;
+        };
+        componentOptions.staticRenderFns = res.staticRenderFns;
+
+        const readyForMoutedElement = this.createMountedElement();
+        // 渲染当前代码
+        new Vue(componentOptions).$mount(readyForMoutedElement);
+
+        // 拍平数据结构
+        this.editMode && this.flatDataStructure(rawDataStructure);
+
+        // 开启编辑模式
+        this.editMode && this.enableEditMode();
 
         return this;
     }
@@ -97,9 +97,8 @@ export class MainPanelProvider {
         return this;
     }
 
-    setEditMode(editMode, mountedEle) {
+    setEditMode(editMode) {
         this.editMode = editMode;
-        this.mountedEle = mountedEle;
         this.reRender();
     }
 
@@ -146,11 +145,20 @@ export class MainPanelProvider {
      */
     createMountedElement() {
         const renderControlPanel = this.getControlPanelRoot();
-
-        if (this.styleNodeName) {
+        if(this.styleNodeName) {
             renderControlPanel.setAttribute('class', this.styleNodeName);
         }
-        return renderControlPanel;
+
+        const child = document.createElement('div');
+
+        // 清空子节点
+        while (renderControlPanel.firstChild) {
+            renderControlPanel.removeChild(renderControlPanel.firstChild)
+        }
+
+        renderControlPanel.appendChild(child);
+
+        return child;
     }
 
     /**
@@ -280,11 +288,11 @@ export class MainPanelProvider {
     enableEditMode() {
         const renderControlPanel = this.getControlPanelRoot();
         // 加一个延迟的作用是：给el-table这种绘制需要时间的组件留出充足的时间，否则会造成el-table渲染不到页面上
-        
+
         if (this.enableDelayTask) {
             clearTimeout(this.enableDelayTask);
         }
-        
+
         this.enableDelayTask = setTimeout(() => {
             // 这种方式可以禁用原节点所有的事件
             const elClone = renderControlPanel.cloneNode(true);
@@ -378,7 +386,7 @@ export class MainPanelProvider {
         this.backup();
         // 这里是为了满足当有属性删除的情况，保留保留属性：__children lc-mark lc_id
         for (const key in object) {
-            if (object.prototype.hasOwnProperty.call(key) &&
+            if (Object.prototype.hasOwnProperty.call(object, key) &&
                 key != "__children" && key != "lc-mark" && key != "lc_id" &&
                 !isObject(object[key]/** 值为Object的情况目前已经没有了2021年02月04日11:56:28 */)) {
                 delete object[key];

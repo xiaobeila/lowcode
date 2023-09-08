@@ -386,7 +386,7 @@ function indentate(level) {
   return this.options.indentBy.repeat(level);
 }
 
-function isAttribute(name /*, options*/) {
+function isAttribute(/*, options*/) {
   return true;
 }
 
@@ -594,8 +594,8 @@ export class CodeGenerator {
     // 序列化为脚本代码
     const finalJSCode = stringifyObject(mergedJSObject, {
       transform: (object, property, originalResult) => {
-        if (!originalResult.match(/^\([^\(]+/g) && !originalResult.match(/^\{/g)) { // 不对以(/{ 开头的情况做处理，只对包含有方法名的情况做处理
-          const after = originalResult.replace(/[^\(]+?\(([\w,\s]*)\)/, '\($1\)=>');
+        if (!originalResult.match(/^\([^(]+/g) && !originalResult.match(/^\{/g)) { // 不对以(/{ 开头的情况做处理，只对包含有方法名的情况做处理
+          const after = originalResult.replace(/[^(]+?\(([\w,\s]*)\)/, '($1)=>');
           return after;
         }
 
@@ -672,16 +672,7 @@ export class CodeGenerator {
   // 递归解析Json
   parseJson(json) {
     for (const key in json) {
-      if (json.hasOwnProperty(key)) {
-        const value = json[key];
-        if (value instanceof Array) {
-          value.forEach((item) => this.parseJson(item));
-        } else if (value instanceof Object) {
-          this.parseJson(value);
-        } else {
-          this.deliveryResult(key, value);
-        }
-      }
+      console.log(key, json);
     }
   }
 }

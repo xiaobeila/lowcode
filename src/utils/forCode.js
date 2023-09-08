@@ -9,7 +9,7 @@ export function replaceRowID(codeObj, html) {
     function deep(obj) {
         if (isObject(obj)) {
             for (const key in obj) {
-                if (obj.property.prototype.hasOwnProperty.call(key)) {
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
                     const element = obj[key];
                     if (key == "lc_id") {
                         const oldID = obj[key];
@@ -68,19 +68,19 @@ export function findRawVueInfo(element) {
 export function flatCodeObj(codeObj) {
     function deep(object) {
         for (const key in object) {
-            if (object.prototype.hasOwnProperty.call(key)) {
+            if (Object.prototype.hasOwnProperty.call(object, key)) {
                 const element = object[key];
 
                 // 如果对__children的子属性遍历时，它内部的元素需要指向外层的节点作为父节点
                 if (
-                    object.prototype.hasOwnProperty.call("__key__") &&
+                    Object.prototype.hasOwnProperty.call(object, "__key__") &&
                     object["__key__"] === "__children" &&
                     isObject(element)
                 ) {
                     delete object["__key__"];
                 }
 
-                if (key === "lc_id" && object.prototype.hasOwnProperty.call("__key__")) {
+                if (key === "lc_id" && Object.prototype.hasOwnProperty.call(object, "__key__")) {
                     const outerKey = object["__key__"];
                     const newObj = {
                         [outerKey]: object
@@ -116,7 +116,8 @@ export function linkRelationShip(unitRootCodeObj) {
     function deep(obj) {
         if (isObject(obj)) {
             for (const key in obj) {
-                if (obj.prototype.hasOwnProperty.call(key)) {
+                console.log(obj);
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
                     const element = obj[key];
                     if (isObject(element)) {
                         element.__proto__ = { parentCodeNode: obj };
@@ -141,7 +142,7 @@ export function removeAllID(codeObj) {
     function deep(obj) {
         if (isObject(obj)) {
             for (const key in obj) {
-                if (obj.prototype.hasOwnProperty.call(key)) {
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
                     const element = obj[key];
                     if (key == "lc_id" || key == "lc-mark") {
                         delete obj[key];
@@ -235,7 +236,7 @@ export function insertPresetAttribute(vueInfo) {
     const presetAttr = presetAttribute[key];
     if (presetAttr) {
         for (const key in presetAttr) {
-            if (presetAttr.prototype.hasOwnProperty.call(key)) {
+            if (Object.prototype.hasOwnProperty.call(presetAttr, key)) {
                 // 将原先的属性做新增或者替换操作
                 const element = presetAttr[key];
                 value[key] = element;

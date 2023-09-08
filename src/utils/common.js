@@ -39,7 +39,7 @@ export function createUniqueId() {
 export function ergodic(jsonObj) {
   if (jsonObj) {
     for (const key in jsonObj) {
-      if (jsonObj.prototype.hasOwnProperty.call(key)) {
+      if (Object.prototype.hasOwnProperty.call(jsonObj, key)) {
         const element = jsonObj[key];
 
         if (isArray(element)) {
